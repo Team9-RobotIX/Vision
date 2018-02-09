@@ -185,7 +185,7 @@ class PathDetector(Detector):
         buff = self.length
         if self.length > self.width:
             buff = self.width #use the lesser of the two
-        buff = int((buff + 1))# / 2)  #divide by to only use the center
+        buff = int((buff + 1))
         kernel = np.zeros((buff,buff), np.uint8)
         center = buff / 2
         for i in range(buff):

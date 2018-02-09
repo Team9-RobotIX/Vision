@@ -1,5 +1,5 @@
 import video
 import cv2
 vid = cv2.VideoCapture(0)
-det = video.WallDetection(vid)
-
+walls = video.WallDetector(vid)
+paths = video.PathDetector(walls.getWalls(),20,20)
