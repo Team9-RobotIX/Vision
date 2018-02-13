@@ -76,13 +76,15 @@ def visualize(fn):
     (graph, verts) = readFile(fn)
     pf.populate(graph, verts)
     
-    # Visualize
+    # Try finding a path and print it
+    print("Shortest path from [1] to [15]:")
+    print(pf.findPath(verts[1], verts[15]))
+
+    # Visualize - DOES NOT PRESERVE DISTANCE, just edges between corresponding verts
     plt.figure()
     nx.draw(graph, with_labels=True)
     plt.show()
 
-    print(pf.findPath(verts[1], verts[15]))
-
-
+    
 # Debug - visualize current graph
 visualize("graph.txt")
