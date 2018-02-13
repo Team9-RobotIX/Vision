@@ -20,10 +20,10 @@ class Pathfinder:
 
     # Find a path 
     def findPath(self, origin, target):
-        return nx.astar_path(self.G,origin, target, heuristic=self.heuristic)
+        return nx.astar_path(self.G,origin, target, heuristic=self.heuristic, weight='length')
 
     # Can swap out heuristic functions
-    def heuristic(x,a,b):
+    def heuristic(self,a,b):
         return euclidean(a,b)
 
 
@@ -48,7 +48,7 @@ def readFile(fn):
         for j, c in enumerate(lines[i+numVertices+1].split(',')):
             if(c =='1'):
                 # There is an edge from i to j
-                G.add_edge(verts[i], verts[j], weight=euclidean(verts[i], verts[j]))
+                G.add_edge(verts[i], verts[j], length=euclidean(verts[i], verts[j]))
 
     return (G, verts)
         
@@ -62,7 +62,8 @@ def euclidean(a, b):
     dy = abs(a[2] - b[2])
     return D * sqrt(dx * dx + dy * dy)
 
-# Manhattan distance
+# Manhattan distance 
+# Faster, but pretty inaccurate - assumes a 4-dir grid
 def manhattan(a, b):
     return abs(a.x - b.x) + abs(a.y - b.y)
 
