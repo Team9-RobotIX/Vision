@@ -21,7 +21,7 @@ def blend_transparent(capture, overlay):
 
 
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 #cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 #cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 #print("is it opened?", cap.isOpened())
@@ -32,7 +32,7 @@ overlay = cv2.imread("Yellow.png", -1)
 while(cap.isOpened()):
     ret, frame = cap.read()
     o = blend_transparent(frame, overlay)
-    cv2.imshow('frame',o)
+    cv2.imshow('frame',frame)
     #cv2.cvtColor(o, cv2.COLOR_BGR2RGB)
     cv2.imshow("r", o[:,:,0])
     cv2.imshow("g", o[:,:,1])

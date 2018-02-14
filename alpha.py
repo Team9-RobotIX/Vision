@@ -203,5 +203,5 @@ class PathDetector(Detector):
                         self.graph,self.check, self.overlay]
         dispImg = dispImg = options[img]
         cv2.imshow('Image', dispImg)
-        cv2.waitKey(5000)
+        cv2.waitKey(3000)
         cv2.destroyAllWindows()
