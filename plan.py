@@ -12,23 +12,66 @@ class path:
     length = 0.0
     angle = 0
 
-def findT():
+def findRed():
     #_, frame = vid.read()
-    frame = cv2.imread("T.jpg")
+    frame = cv2.imread("T.png")
+    frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-    lower_red = np.array([173, 3, 6])
-    upper_red = np.array([255, 104, 107])
-    mask = cv2.inRange(frame, upper_red, lower_red)
-    kernel = np.ones((5,5),np.uint8)
-    mask = cv2.dilate(mask,kernel,iterations=3)
+
+    # lower mask (0-10)
+    lower_red = np.array([0,50,50])
+    upper_red = np.array([10,255,255])
+    mask0 = cv2.inRange(frame_hsv, lower_red, upper_red)
+
+    # upper mask (170-180)
+    lower_red = np.array([170,50,50])
+    upper_red = np.array([180,255,255])
+    mask1 = cv2.inRange(frame_hsv, lower_red, upper_red)
+    mask = mask0+mask1
+
+    output_img = frame.copy()
+    output_img[np.where(mask==0)] = 0
+
+    output_hsv = frame_hsv.copy()
+    output_hsv[np.where(mask==0)] = 0
+
     M = cv2.moments(mask)
-    # cx = int(M['m10']/M['m00'])
-    # cy = int(M['m01']/M['m00'])
     while(True):
-        cv2.imshow("image", mask)
+        cv2.imshow("image", output_img)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-    return
+
+    cx = int(M['m10']/M['m00'])
+    cy = int(M['m01']/M['m00'])
+    print(cx,cy)
+    return(cx,cy)
+
+def findBlue():
+    #_, frame = vid.read()
+    frame = cv2.imread("blue.png")
+    frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+    # define range of blue color in HSV
+    lower_blue = np.array([110,50,50])
+    upper_blue = np.array([130,255,255])
+    # Threshold the HSV image to get only blue colors
+    mask = cv2.inRange(frame_hsv, lower_blue, upper_blue)
+    # Bitwise-AND mask and original image
+    res = cv2.bitwise_and(frame,frame, mask= mask)
+    cv2.imshow('frame',frame)
+    cv2.imshow('mask',mask)
+    cv2.imshow('res',res)
+
+    M = cv2.moments(mask)
+    while(True):
+        cv2.imshow("image", res)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cx = int(M['m10']/M['m00'])
+    cy = int(M['m01']/M['m00'])
+    print(cx,cy)
+    return(cx,cy)
 
 
 def rotateT (image):
@@ -63,8 +106,11 @@ def convertToInstruction(distance, angle):
     move = {'instruction': 'MOVE', 'value': distance}
     return newData
 
-def main():
-    print("hello")
+findBlue()
 
-    if __name__ == "__main__":
-        main()
+# def main():
+#     print("hello")
+#     findT()
+#
+#     if __name__ == "__main__":
+#         main()
