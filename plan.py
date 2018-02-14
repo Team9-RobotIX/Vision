@@ -14,30 +14,25 @@ class path:
 
 def findRed():
     #_, frame = vid.read()
-    frame = cv2.imread("T.png")
+    frame = cv2.imread("capture.png")
     frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-
-    # lower mask (0-10)
-    lower_red = np.array([0,50,50])
-    upper_red = np.array([10,255,255])
-    mask0 = cv2.inRange(frame_hsv, lower_red, upper_red)
-
-    # upper mask (170-180)
-    lower_red = np.array([170,50,50])
-    upper_red = np.array([180,255,255])
-    mask1 = cv2.inRange(frame_hsv, lower_red, upper_red)
-    mask = mask0+mask1
-
-    output_img = frame.copy()
-    output_img[np.where(mask==0)] = 0
-
-    output_hsv = frame_hsv.copy()
-    output_hsv[np.where(mask==0)] = 0
+    # define range of red color in HSV
+    upper_red = np.array([6, 258, 276])
+    lower_red = np.array([0, 252, 196])
+    # Threshold the HSV image to get only blue colors
+    mask = cv2.inRange(frame_hsv, lower_red, upper_red)
+    #kernel = np.ones((5,5),np.uint8)
+    #mask = cv2.erode(mask,kernel,iterations=1)
+    # Bitwise-AND mask and original image
+    res = cv2.bitwise_and(frame,frame, mask= mask)
+    cv2.imshow('frame',frame)
+    cv2.imshow('mask',mask)
+    cv2.imshow('res',res)
 
     M = cv2.moments(mask)
     while(True):
-        cv2.imshow("image", output_img)
+        cv2.imshow("image", res)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
@@ -48,12 +43,12 @@ def findRed():
 
 def findBlue():
     #_, frame = vid.read()
-    frame = cv2.imread("blue.png")
+    frame = cv2.imread("capture.png")
     frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
     # define range of blue color in HSV
-    lower_blue = np.array([110,50,50])
-    upper_blue = np.array([130,255,255])
+    lower_blue = np.array([101, 252, 215])
+    upper_blue = np.array([107, 258, 295])
     # Threshold the HSV image to get only blue colors
     mask = cv2.inRange(frame_hsv, lower_blue, upper_blue)
     # Bitwise-AND mask and original image
@@ -72,6 +67,13 @@ def findBlue():
     cy = int(M['m01']/M['m00'])
     print(cx,cy)
     return(cx,cy)
+
+
+def findBot():
+    bx, by = findBlue()
+    rx,ry = findRed()
+    return (((bx+rx)/2),((by+ry)/2))
+
 
 
 def rotateT (image):
