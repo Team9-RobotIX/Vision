@@ -41,7 +41,7 @@ class PathDetector:
         cv2.imshow('Image', overlay)
         cv2.waitKey(5000)
         cv2.destroyAllWindows()
-        cv2.imwrite('capture.png', overlay)
+        
         print('Path Detection Complete')
 
     def blend_transparent(self, capture, overlay):

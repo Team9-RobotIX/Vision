@@ -27,6 +27,9 @@ class TargetDetector:
         self.targets = self.createTargets()
         self.findTargets()
         self.mask = self.createMask()
+        cv2.imshow('MASK', self.mask)
+        cv2.waitKey(5000)
+        cv2.destroyAllWindows()
 
     def createTargets(self):
         targets = [
@@ -41,7 +44,8 @@ class TargetDetector:
 
     def createMask(self):
         ret, frame = self.videoFeed.read()
-        mask = np.zeros(frame.shape, np.uint8)
+        shape = frame.shape
+        mask = np.zeros((shape[0],shape[1]), np.uint8)
         for target in self.targets:
             cv2.fillPoly(mask, target.contour,255)
         return mask
@@ -58,7 +62,15 @@ class TargetDetector:
         for i in range(samples - 1):
             runningSum = runningSum + self.findTargetSingle(target)
         ret, detected = cv2.threshold(runningSum, threshold, 255, cv2.THRESH_BINARY)
-        
+
+        M = cv2.moments(detected)
+        cx = int(M['m10']/M['m00'])
+        cy = int(M['m01']/M['m00'])
+
+        target.center = (cx, cy)
+        im2, contours, hierarchy = cv2.findContours(detected, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        target.contour = contours
 
     def findTargetSingle(self, target):
 
