@@ -2,7 +2,7 @@
 import cv2
 import numpy as np
 
-#vid = cv2.VideoCapture(0)
+vid = cv2.VideoCapture(0)
 
 
 
@@ -13,8 +13,8 @@ class path:
     angle = 0
 
 def findRed():
-    #_, frame = vid.read()
-    frame = cv2.imread("T.png")
+    _, frame = vid.read()
+    #frame = cv2.imread("T.png")
     frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
 
@@ -24,7 +24,7 @@ def findRed():
     mask0 = cv2.inRange(frame_hsv, lower_red, upper_red)
 
     # upper mask (170-180)
-    lower_red = np.array([170,50,50])
+    lower_red = np.array([170,50,200])
     upper_red = np.array([180,255,255])
     mask1 = cv2.inRange(frame_hsv, lower_red, upper_red)
     mask = mask0+mask1
@@ -106,7 +106,7 @@ def convertToInstruction(distance, angle):
     move = {'instruction': 'MOVE', 'value': distance}
     return newData
 
-findBlue()
+findRed()
 
 # def main():
 #     print("hello")

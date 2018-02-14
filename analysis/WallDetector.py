@@ -61,6 +61,9 @@ class WallDetector:
             runningSum = runningSum + self.findWallsSingle()
         print('  Creating Composite Image')
         ret, walls = cv2.threshold(runningSum, threshold, 255, cv2.THRESH_BINARY)
+        cv2.imshow('thresh',walls)
+        cv2.waitKey(5000)
+        cv2.destroyAllWindows()
         return walls.astype(np.uint8)
 
     def findWallsSingle(self):
@@ -71,11 +74,11 @@ class WallDetector:
         img, base  = self.getImage()
         #--------- use these for remote testing -------
         #img = cv2.imread('snap2.jpeg')
-        #base = cv2.imread('snap.jpeg')
-        #----------------------------------------------
+        #base = cv2.imread('snap2.jpeg')
+        #----------------------------------------------q
         #Picks walls by color
         print('    Applying Color Filter')
-        thresh = cv2.inRange(img,(0,40,200),(20,190,255))
+        thresh = cv2.inRange(img,(0,80,200),(20,190,255))
         #Applies morphological transforms to smooth stuff out
         print('    Applying Morphological Transforms')
         dilated = cv2.dilate(thresh,np.ones((7,7)))
@@ -92,8 +95,7 @@ class WallDetector:
         #overlays the contours
         print('    Filling Contours')
         walls = np.zeros((base.shape[0],base.shape[1]), dtype='float32')
-        cv2.fillPoly(walls,trueContours,255)
-        cv2.imwrite('wallsample.png',base)
+        cv2.fillPoly(walls,trueContours,1)
         return walls
 
     def getImage(self):

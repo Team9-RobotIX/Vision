@@ -1,9 +1,15 @@
 import numpy as np
 import cv2
+import analysis
 
 class PathDetector:
 
     videoFeed = None
+
+    wallDetector = None
+    targetDetector = None
+    robotDetector = None
+
     frame = None
 
     walls = None
@@ -13,13 +19,16 @@ class PathDetector:
     length = 0
     width = 0
 
-    def __init__(self, vf, fr, ws, length, width):
+    def __init__(self):
         print('Beginning Path Detection')
-        self.videoFeed = vf
-        self.frame = fr
-        self.walls = ws
-        self.length = length
-        self.width = width
+        self.videoFeed = cv2.VideoCapture(0)
+        self.wallDetector = analysis.WallDetector(self.videoFeed)
+        self.targetDetector = None
+        self.robotDetector = None
+        self.frame = self.wallDetector.getFrame()
+        self.walls = self.wallDetector.getWalls()
+        self.length = 20 #TODO Detect the robot
+        self.width = 20  #TODO Detect the robot
         self.deadSpace = self.createDeadSpace()
         self.spacing = self.createSpacing()
         self.maxima = self.createMaxima()
@@ -32,6 +41,7 @@ class PathDetector:
         cv2.imshow('Image', overlay)
         cv2.waitKey(5000)
         cv2.destroyAllWindows()
+        cv2.imwrite('capture.png', overlay)
         print('Path Detection Complete')
 
     def blend_transparent(self, capture, overlay):
