@@ -5,45 +5,60 @@ class Target:
 
     name = None
 
-    color = None
-    tolerance = None
+    lower = None
+    upper = None
     contour = None
     center = None
 
-    def __init__(self, n, col, tol):
+    def __init__(self, n, low, high):
         self.name = n
-        self.color = col
-        self.tolerance = tol
+        self.lower = low
+        self.upper = high
 
 class TargetDetector:
 
-    videoFeed = None
     targets = None
 
     mask = None
 
-    def __init__(self, vf):
-        self.videoFeed = vf
+    def __init__(self, camera):
+        self.camera = camera
+        self.enableSettings()
         self.targets = self.createTargets()
-        self.findTargets()
+        #self.findTargets()
         self.mask = self.createMask()
-        cv2.imshow('MASK', self.mask)
-        cv2.waitKey(5000)
-        cv2.destroyAllWindows()
+
+
+    def enableSettings(self):
+        settings = [
+    		(3,800.0),
+    		(4,800.0),
+    		(5,30.0),
+    		(9,0.0),
+    		(10,0.35686275362968445),
+    		(11,0.13333334028720856),
+    		(12,0.7372549176216125),
+    		(14,0.05098039284348488)
+        ]
+        self.camera.enableSettings(settings)
+
 
     def createTargets(self):
         targets = [
-            ('RED',(10,20,240),30),
-            ('GREEN',(90,170,10),40),
-            ('BLUE',(245,190,10),30)
+            ('reception', (12,  30, 235), (52,  70, 275)),
+            ('desk',(0,0,0),(30,30,30)),
+            ('office',(200,200,200),(255,255,255))
         ]
         targetObjects = []
         for target in targets:
-            targetObjects.append(Target(target[0],np.array(target[1]),target[2]))
+            targetObjects.append(Target(target[0],np.array(target[1]),np.array(target[2])))
+        targetObjects[0].center = (123,241)
+        targetObjects[1].center = (454,113)
+        targetObjects[2].center = (448,330)
         return targetObjects
 
     def createMask(self):
-        ret, frame = self.videoFeed.read()
+        frame = self.camera.getFrame()
         shape = frame.shape
         mask = np.zeros((shape[0],shape[1]), np.uint8)
         for target in self.targets:
@@ -57,13 +72,17 @@ class TargetDetector:
 
     def findTarget(self, target):
         samples = 5
-        threshold = 2.1
+        threshold = 1.1
         runningSum = self.findTargetSingle(target)
         for i in range(samples - 1):
             runningSum = runningSum + self.findTargetSingle(target)
         ret, detected = cv2.threshold(runningSum, threshold, 255, cv2.THRESH_BINARY)
 
         M = cv2.moments(detected)
+
+        if M['m00'] == 0:
+            print('Issue detecting target:', target.name)
+
         cx = int(M['m10']/M['m00'])
         cy = int(M['m01']/M['m00'])
 
@@ -73,13 +92,13 @@ class TargetDetector:
         target.contour = contours
 
     def findTargetSingle(self, target):
+        frame = self.camera.getFrame()
+        thresh = cv2.inRange(frame, target.lower, target.upper)
 
-        ret, frame = self.videoFeed.read()
-        thresh = cv2.inRange(frame, target.color - target.tolerance,
-                                    target.color + target.tolerance)
         eroded = cv2.erode(thresh, np.ones((3,3))) #Used to delete the stray pixels that appear in our image
         dilated = cv2.dilate(eroded, np.ones((5,5))) #Used to add in the pixels we want but were removed by erosion
         dilated[dilated == 255] = 1
+
         return dilated
 
     def getTarget(self, name):

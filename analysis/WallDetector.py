@@ -3,14 +3,16 @@ import cv2
 
 class WallDetector:
 
-    videoFeed = None
+    camera = None
     walls = None
 
-    def __init__(self, vf):
+    def __init__(self, camera):
         print('Beginning Wall Detection')
-        self.videoFeed = vf
+        self.camera = camera
         self.enableSettings()
         self.walls = self.findWalls()
+
+        self.camera.setCrop(self.getCrop())
         print('Wall Detection Complete')
 
     def getWalls(self):
@@ -26,7 +28,7 @@ class WallDetector:
         x,y,w,h = cv2.boundingRect(maxCnt)
         return self.walls[y:y+h, x:x+w]
 
-    def getFrame(self):
+    def getCrop(self):
         wallCopy = self.walls.copy()
         im2, contours, hierarchy = cv2.findContours(wallCopy, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         maxArea = -1
@@ -37,23 +39,24 @@ class WallDetector:
                 maxArea = area
                 maxCnt = cnt
         x,y,w,h = cv2.boundingRect(maxCnt)
-        return self.videoFeed.read()[1][y:y+h, x:x+w,:]
+        return {'x':x,'y':y,'w':w,'h':h}
 
     def enableSettings(self):
-        settings = [(3,800), #640
-                    (4,800), #480
-                    #(5,25),
-                    (9,0),
-                    (10,0.46666666865348816),
-                    (11,0.21259842813014984),
-                    (12,0.9055117964744568)]#,
-                    #(13,0.4901960790157318)]
-        for setting in settings:
-            self.videoFeed.set(setting[0],setting[1])
+        settings = [
+        	(3,800.0),
+        	(4,800.0),
+        	(5,30.0),
+        	(9,0.0),
+        	(10,0.5058823823928833),
+        	(11,0.03921568766236305),
+        	(12,0.250980406999588),
+        	(14,0.6117647290229797)
+        ]
+        self.camera.enableSettings(settings)
 
     def findWalls(self):
         samples = 5
-        threshold = 3.1
+        threshold = 0.1
         print('  Acquiring Wall Sample 0')
         runningSum = self.findWallsSingle()
         for i in range(samples - 1):
@@ -61,15 +64,9 @@ class WallDetector:
             runningSum = runningSum + self.findWallsSingle()
         print('  Creating Composite Image')
         ret, walls = cv2.threshold(runningSum, threshold, 255, cv2.THRESH_BINARY)
-        cv2.imshow('thresh',walls)
-        cv2.waitKey(5000)
-        cv2.destroyAllWindows()
         return walls.astype(np.uint8)
 
     def findWallsSingle(self):
-        #----- Comment this out for remote testing ----
-        if not self.videoFeed.isOpened():
-            raise VideoError('Video feed is not opened')
         #----------------------------------------------
         img, base  = self.getImage()
         #--------- use these for remote testing -------
@@ -78,10 +75,10 @@ class WallDetector:
         #----------------------------------------------q
         #Picks walls by color
         print('    Applying Color Filter')
-        thresh = cv2.inRange(img,(0,80,200),(20,190,255))
+        thresh = cv2.inRange(img,(50,70,150),(110,160,180))
         #Applies morphological transforms to smooth stuff out
         print('    Applying Morphological Transforms')
-        dilated = cv2.dilate(thresh,np.ones((7,7)))
+        dilated = cv2.dilate(thresh,np.ones((3,3)), iterations=3)
         eroded = cv2.erode(dilated,np.ones((3,3)))
         print('    Detecting contours')
         #Detects the contours, which is for us the walls
@@ -90,7 +87,8 @@ class WallDetector:
         print('    Filtering Contours')
         trueContours = []
         for cnt in contours:
-            if cv2.contourArea(cnt) > 100:
+            area = cv2.contourArea(cnt)
+            if area > 500:
                 trueContours.append(cnt)
         #overlays the contours
         print('    Filling Contours')
@@ -102,11 +100,11 @@ class WallDetector:
         print('    Acquiring Image Samples')
         samples = 1
         if samples == 1:
-            frame = self.videoFeed.read()[1]
+            frame = self.camera.getFrame(cropped=False)
             return (frame, frame)
         frames = []
         for i in range(samples):
-            frames.append(self.videoFeed.read()[1])
+            frames.append(self.camera.getFrame(cropped=False))
         npFrames = np.asarray(frames)
         npMed = np.median(npFrames, axis = 0)
         print('    Computing Median Image')

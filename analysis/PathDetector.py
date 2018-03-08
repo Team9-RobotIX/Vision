@@ -4,7 +4,7 @@ import analysis
 
 class PathDetector:
 
-    videoFeed = None
+    camera = None
 
     wallDetector = None
     targetDetector = None
@@ -21,47 +21,32 @@ class PathDetector:
 
     def __init__(self):
         print('Beginning Path Detection')
-        self.videoFeed = cv2.VideoCapture(0)
-        self.wallDetector = analysis.WallDetector(self.videoFeed)
-        self.targetDetector = None
-        self.robotDetector = None
-        self.frame = self.wallDetector.getFrame()
+        self.camera = analysis.Camera()
+        self.wallDetector = analysis.WallDetector(self.camera)
+        self.frame = self.camera.getFrame()
         self.walls = self.wallDetector.getWalls()
-        self.length = 20 #TODO Detect the robot
-        self.width = 20  #TODO Detect the robot
+        self.targetDetector = analysis.TargetDetector(self.camera)
+        self.targets = self.targetDetector.targets
+        self.robotDetector = analysis.RobotDetector(self.camera)
+        self.length = self.robotDetector.length
+        self.width = self.robotDetector.width
         self.deadSpace = self.createDeadSpace()
         self.spacing = self.createSpacing()
         self.maxima = self.createMaxima()
-        self.graph = self.createGraph()
+        (self.vertices, self.matrix) = self.createGraph() #probably not needed
         self.check = self.createCheck()
-
         flip = cv2.bitwise_not(self.graph)
         overlay = cv2.bitwise_and(self.frame, self.frame, mask=flip)
-
-        cv2.imshow('Image', overlay)
-        cv2.waitKey(5000)
-        cv2.destroyAllWindows()
-        
         print('Path Detection Complete')
-
-    def blend_transparent(self, capture, overlay):
-        # Split out the transparency mask from the colour info
-
-        overlay_img = overlay[:,:,:3]
-        overlay_mask = overlay[:,:,3:]
-        background_mask = 255 - overlay_mask
-
-        overlay_mask = cv2.cvtColor(overlay_mask, cv2.COLOR_GRAY2BGR)
-        background_mask = cv2.cvtColor(background_mask, cv2.COLOR_GRAY2BGR)
-
-        # Create a masked out face image, and masked out overlay
-        capture_part = (capture * (1 / 255.0)) * (background_mask * (1 / 255.0))
-        overlay_part = (overlay_img * (1 / 255.0)) * (overlay_mask * (1 / 255.0))
-
-        return np.uint8(cv2.addWeighted(capture_part, 255.0, overlay_part, 255.0, 0.0))
 
     def createCheck(self):
         return cv2.bitwise_or(self.graph, self.deadSpace)
+
+    def getFrame(self):
+        return self.wallDetector.getFrame()
+
+    def recreateGraph(self):
+        (self.vertices, self.matrix) = self.createGraph()
 
     def createGraph(self):
         print('  Generating Graph')
@@ -71,6 +56,10 @@ class PathDetector:
         rects = []
         pointCounts = []
         points = []
+        robot = self.robotDetector.center(self.frame, newFrame=True)
+        targets = self.targetDetector.targets
+        points.append(robot)
+        pointCounts.append(1)
         for cnt in contours:
             box = cv2.boxPoints(cv2.minAreaRect(cnt))
             box = np.int0(box)
@@ -89,7 +78,9 @@ class PathDetector:
                 points.append(p)
                 count = count + 1
             pointCounts.append(count)
-
+        for target in targets:
+            points.append(target.center)
+            pointCounts.append(1)
         #this matrix will represent all the pairs of points that can reach eachother
         #without travelling through a dead space
         connectMatrix = np.zeros((len(points),len(points))) + 10
@@ -117,14 +108,22 @@ class PathDetector:
                 else:
                     connectMatrix[i,j] = 0
                     connectMatrix[j,i] = 0
-        graph = np.zeros(maxima.shape, np.uint8)
+        graphMask = np.zeros(maxima.shape, np.uint8)
         for i in range(len(points)):
             for j in range(len(points)):
                 if not connectMatrix[i,j] == 0:
                     pointA = tuple(points[i])
                     pointB = tuple(points[j])
-                    cv2.line(graph,pointA,pointB,255,1)
-        return graph
+                    cv2.line(graphMask,pointA,pointB,255,1)
+        binaryMatrix = np.zeros(connectMatrix.shape)
+        for i in range(len(points)):
+            for j in range(len(points)):
+                if connectMatrix[i,j] == 0:
+                    binaryMatrix[i,j] = 0
+                else:
+                    binaryMatrix[i,j] = 1
+        self.graph = graphMask
+        return (points,binaryMatrix)
 
     def createMaxima(self):
         print('  Finding Space Maxima')
