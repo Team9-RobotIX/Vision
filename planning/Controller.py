@@ -5,10 +5,11 @@ import requests
 import json
 import math
 from math import sqrt
+from Config import Config
 
-base = 'http://18.219.63.23/edge'
-
-post = 'http://18.219.63.23/post'
+conf = Config
+base = conf.BASE_URL + '/edge'
+post = conf.BASE_URL + '/post'
 
 class Controller:
 
@@ -34,18 +35,18 @@ class Controller:
     def deliver(self, delivery):
         id = delivery['id']
         data = {'state':   'IN_PROGRESS'}
-        r = requests.patch("http://18.219.63.23/development/delivery/" + str(id), json=data)
+        r = requests.patch(conf.BASE_URL + "/development/delivery/" + str(id), json=data)
         self.toTarget(delivery['from']['name'].lower())
         data = {'state':   'AWAITING_PICKUP'}
-        r = requests.patch("http://18.219.63.23/development/delivery/" + str(id), json=data)
+        r = requests.patch(conf.BASE_URL + "/development/delivery/" + str(id), json=data)
 
         data = {'state':   'IN_PROGRESS'}
-        r = requests.patch("http://18.219.63.23/development/delivery/" + str(id), json=data)
+        r = requests.patch(conf.BASE_URL + "/development/delivery/" + str(id), json=data)
         self.toTarget(delivery['to']['name'].lower())
         data = {'state':   'COMPLETED'}
-        r = requests.patch("http://18.219.63.23/development/delivery/" + str(id), json=data)
+        r = requests.patch(conf.BASE_URL + "/development/delivery/" + str(id), json=data)
 
-        r = requests.delete('http://18.219.63.23/development/delivery/' + str(id))
+        r = requests.delete(conf.BASE_URL + '/development/delivery/' + str(id))
 
 
     def toTarget(self, name):
@@ -125,7 +126,7 @@ class Controller:
         return frame
 
     def getDelivery(self):
-        url = "http://18.219.63.23/development/deliveries"
+        url = conf.BASE_URL + "/development/deliveries"
         r = requests.get(url)
         queue = json.loads(r.text)
         return queue[0]
@@ -136,7 +137,7 @@ class Controller:
         self.plan = self.toTarget(fro)
         #self.plan = self.planner.plan('YELLOW')
         instructions = self.pointConversion(self.plan)
-        url = "http://ec2-18-219-63-23.us-east-2.compute.amazonaws.com/edge/instructions"
+        url = conf.BASE_URL + "/edge/instructions"
         r = requests.post(url, json = instructions)
         print(r.text)
 

@@ -2,7 +2,9 @@ import cv2
 import numpy as np
 import requests
 import math
+from Config import Config
 
+conf = Config
 class Tracker:
     def __init__(self, rd):
         self.robotDetector = rd
@@ -85,17 +87,17 @@ class Tracker:
 
     def go(self,correction):
         print("correction",correction)
-        post = 'http://18.219.63.23/flaskapp/post?onOff=1&turnAngle=0.0&correction='+str(correction)
+        post = conf.BASE_URL + '/flaskapp/post?onOff=1&turnAngle=0.0&correction='+str(correction)
         r = requests.get(post)
         #print("go",r.text)
 
     def stop(self):
-        post = 'http://18.219.63.23/flaskapp/post?onOff=0&turnAngle=0.0&correction=0'
+        post = conf.BASE_URL + '/flaskapp/post?onOff=0&turnAngle=0.0&correction=0'
         r = requests.get(post)
         #print("stop",r.text)
 
     def turn(self, d):
-        post = 'http://18.219.63.23/flaskapp/post?onOff=1&turnAngle='+str(d)+'&correction=0'
+        post = conf.BASE_URL + '/flaskapp/post?onOff=1&turnAngle='+str(d)+'&correction=0'
         r = requests.get(post)
         #print("turn",r.text)
 
