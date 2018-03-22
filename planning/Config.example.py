@@ -1,2 +1,2 @@
 class Config:
-    BASE_URL = 
+    BASE_URL = "http://18.219.63.23"
