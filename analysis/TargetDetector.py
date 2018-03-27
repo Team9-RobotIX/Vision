@@ -47,7 +47,8 @@ class TargetDetector:
         targets = [
             ('reception', (12,  30, 235), (52,  70, 275)),
             ('desk',(0,0,0),(30,30,30)),
-            ('office',(200,200,200),(255,255,255))
+            ('office',(200,200,200),(255,255,255)),
+            ('er', (100,100,100),(150,150,150))
         ]
         targetObjects = []
         for target in targets:
@@ -55,6 +56,7 @@ class TargetDetector:
         targetObjects[0].center = (123,241)
         targetObjects[1].center = (454,113)
         targetObjects[2].center = (448,330)
+        targetObjects[3].center = (100,100)
         return targetObjects
 
     def createMask(self):

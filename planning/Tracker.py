@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import requests
 import math
+from time import sleep
 
 class Tracker:
     def __init__(self, rd):
@@ -33,7 +34,19 @@ class Tracker:
             #self.checkOrientation(frame)
             self.checkPointDistance(frame)
         elif self.instruction['type'] == 'TURN':
-            self.checkOrientation(frame)
+            target = self.instruction['angle']
+            fix = self.checkOrientation(frame)
+            if fix:
+                sleep(0.5)
+                orientation = self.robotDetector.orientation(None, newFrame=True)
+                diff = orientation - target
+                if diff > np.pi:
+                    diff -= 2*np.pi
+                else:
+                    diff += 2*np.pi
+                self.turn(-diff)
+                sleep(0.25)
+                self.stop()
         return len(self.plan) == 0
 
 
@@ -47,9 +60,13 @@ class Tracker:
         print("ROBOT ORIENTATION:", orientation)
         print("DESIRED ORIENTATION:", correctOrientation)
         correction = correctOrientation - orientation
+        if correction > np.pi:
+            correction -= 2 * np.pi
+        elif correction < -np.pi:
+            correction += 2 * np.pi
         point = np.array(self.instruction['end'])
         distance = np.linalg.norm(center - point)
-        if distance < 40:
+        if distance < 30:
             self.stop()
             del self.plan[0]
             if len(self.plan) > 0:
@@ -57,7 +74,8 @@ class Tracker:
             else:
                 self.instruction = None
         else:
-            self.go(correction)
+            self.go(correction, distance)
+            #self.go(correction)
 
 
 
@@ -68,6 +86,12 @@ class Tracker:
         orientation = self.robotDetector.orientation(frame)
         absolute = self.instruction['angle']
         print('orientation:',orientation,' angle: ',absolute)
+        dif = orientation - absolute
+        turn = absolute - orientation
+        if turn > np.pi:
+            turn -= 2 * np.pi
+        elif turn < -np.pi:
+            turn += 2 * np.pi
         if np.absolute(orientation - absolute) < 25 / 180 * math.pi:
             self.stop()
             del self.plan[0]
@@ -75,27 +99,26 @@ class Tracker:
                 self.instruction = self.plan[0]
             else:
                 self.instruction = None
-        turn = absolute - orientation
-        if turn > np.pi:
-            turn -= 2 * np.pi
-        elif turn < -np.pi:
-            turn += 2 * np.pi
-        self.turn(turn)
+            return True
+        else:
+            self.turn(turn)
+            return False
 
 
-    def go(self,correction):
+    def go(self,correction,dist):
         print("correction",correction)
-        post = 'http://18.219.63.23/flaskapp/post?onOff=1&turnAngle=0.0&correction='+str(correction)
+        #dist = int(np.round(dist))
+        post = 'http://18.219.63.23/flaskapp/post?onOff=1&turnAngle=0.0&distance='+str(dist)+'&correction='+str(correction*2)
         r = requests.get(post)
-        #print("go",r.text)
+        print("go",r.text)
 
     def stop(self):
-        post = 'http://18.219.63.23/flaskapp/post?onOff=0&turnAngle=0.0&correction=0'
+        post = 'http://18.219.63.23/flaskapp/post?onOff=0&turnAngle=0.0&correction=0&distance=0'
         r = requests.get(post)
         #print("stop",r.text)
 
     def turn(self, d):
-        post = 'http://18.219.63.23/flaskapp/post?onOff=1&turnAngle='+str(d)+'&correction=0'
+        post = 'http://18.219.63.23/flaskapp/post?onOff=1&turnAngle='+str(d)+'&correction=0&distance=0'
         r = requests.get(post)
         #print("turn",r.text)
 

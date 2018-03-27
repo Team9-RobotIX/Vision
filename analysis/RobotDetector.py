@@ -12,9 +12,6 @@ class RobotDetector:
         print('get size')
         self.enableSettings()
         image = self.camera.getFrame()
-        image = self.camera.getFrame()
-        image = self.camera.getFrame()
-        image = self.camera.getFrame()
         #image = image[self.crop['y']:self.crop['y'] + self.crop['h'],
         #              self.crop['x']:self.crop['x'] + self.crop['w']]
         #maskRed = cv2.inRange(image, (0,0,180),(50,200,295))
@@ -59,7 +56,8 @@ class RobotDetector:
         kernel = np.ones((5,5),np.uint8)
         mask = cv2.dilate(mask,kernel,iterations=3)
         M = cv2.moments(mask)
-
+        if M['m00'] == 0:
+            M['m00'] = 0.0000000001
         cx = int(M['m10']/M['m00'])
         cy = int(M['m01']/M['m00'])
         return (cx,cy)
@@ -70,6 +68,8 @@ class RobotDetector:
         mask = cv2.dilate(mask,kernel,iterations=3)
 
         M = cv2.moments(mask)
+        if M['m00'] == 0:
+            M['m00'] = 0.0000000001
         cx = int(M['m10']/M['m00'])
         cy = int(M['m01']/M['m00'])
 
@@ -82,8 +82,10 @@ class RobotDetector:
             image = self.camera.getFrame()
         return np.mean(np.array([self.findRed(image), self.findBlue(image)]), axis=0, dtype=int)
 
-    def orientation(self,image):
-        self.enableSettings()
+    def orientation(self,image, newFrame=False):
+        if newFrame:
+            self.enableSettings()
+            image = self.camera.getFrame()
         #define rx and ry as the origin
         (bx, by) = self.findBlue(image)
         (rx, ry) = self.findRed(image)

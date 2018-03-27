@@ -44,7 +44,7 @@ class Planner:
         self.nonTargets = len(self.vertices) - len(self.targets)
 
     def plan(self, targetName):
-        print(targetName)
+        print(47, targetName)
         self.getPaths()
         startVert = self.vertices[0]
         start = (0,startVert[0],startVert[1])

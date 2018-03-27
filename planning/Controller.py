@@ -4,6 +4,7 @@ import planning
 import requests
 import json
 import math
+from time import sleep
 from math import sqrt
 
 base = 'http://18.219.63.23/edge'
@@ -21,32 +22,50 @@ class Controller:
         self.camera = self.planner.pathDetector.camera
 
     def run(self):
-        delivery = self.getDelivery()
-        #self.tracker.setPlan(insts)
-        while self.camera.isOpened() and not delivery == None:
-            self.deliver(delivery)
-            delivery = self.getDelivery()
 
-        cv2.destroyAllWindows()
-        self.camera.release()
-        self.tracker.stop()
+        #self.tracker.setPlan(insts)
+        try:
+            while self.camera.isOpened():
+                delivery = self.getDelivery()
+                if delivery == None:
+                    sleep(1.0)
+                    continue
+                self.deliver(delivery)
+        except KeyboardInterrupt:
+            cv2.destroyAllWindows()
+            self.camera.release()
+            self.tracker.stop()
 
     def deliver(self, delivery):
         id = delivery['id']
-        data = {'state':   'IN_PROGRESS'}
+        data = {'state':   'MOVING_TO_SOURCE'}
         r = requests.patch("http://18.219.63.23/development/delivery/" + str(id), json=data)
         self.toTarget(delivery['from']['name'].lower())
-        data = {'state':   'AWAITING_PICKUP'}
+        self.tracker.stop()
+        data = {'state':   'AWAITING_AUTHENTICATION_SENDER'}
         r = requests.patch("http://18.219.63.23/development/delivery/" + str(id), json=data)
 
-        data = {'state':   'IN_PROGRESS'}
+        # WAIT FOR PACKAGE_LOAD_COMPLETE
+        while not self.checkState(id) == 'PACKAGE_LOAD_COMPLETE':
+            sleep(1.0)
+
+        data = {'state':   'MOVING_TO_DESTINATION'}
         r = requests.patch("http://18.219.63.23/development/delivery/" + str(id), json=data)
         self.toTarget(delivery['to']['name'].lower())
-        data = {'state':   'COMPLETED'}
+        self.tracker.stop()
+        data = {'state':   'AWAITING_AUTHENTICATION_RECEIVER'}
         r = requests.patch("http://18.219.63.23/development/delivery/" + str(id), json=data)
+
+        # WAIT FOR PACKAGE_RETRIEVAL_COMPLETE
+        while not self.checkState(id) == 'PACKAGE_RETRIEVAL_COMPLETE':
+            sleep(1.0)
 
         r = requests.delete('http://18.219.63.23/development/delivery/' + str(id))
 
+
+    def checkState(self, id):
+        r = requests.get("http://18.219.63.23/development/delivery/" + str(id))
+        return json.loads(r.text)['state']
 
     def toTarget(self, name):
         self.plan = self.planner.plan(name)
@@ -69,8 +88,9 @@ class Controller:
                 break
             cv2.imshow('frame',self.drawPath(frame))
             #cv2.cvtColor(o, cv2.COLOR_BGR2RGB)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+            cv2.waitKey(1)
+            #if cv2.waitKey(1): & 0xFF == ord('q'):
+            #    break
         self.tracker.stop()
 
 
@@ -128,7 +148,16 @@ class Controller:
         url = "http://18.219.63.23/development/deliveries"
         r = requests.get(url)
         queue = json.loads(r.text)
+        if len(queue) == 0:
+            return None
         return queue[0]
+        #return
+        #num = np.random.randint(low=0, high = 2)
+        #if num == 0:
+        #    return {'id':0,'from':{'name':'reception'},'to':{'name':'office'}}
+        #else:
+        #    return {'id':0,'from':{'name':'ER'},'to':{'name':'desk'}}
+        #return {'id':0,'from':{'name':'reception'},'to':{'name':'office'}}
 
     def sendInstructions(self):
         # Set state of delivery to "in progress"
