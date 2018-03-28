@@ -6,8 +6,9 @@ import requests
 
 class Planner:
 
-    def __init__(self):
-        self.pathDetector = analysis.PathDetector()
+    def __init__(self, robot, camera):
+        self.targets = []
+        self.pathDetector = analysis.PathDetector(robot, camera)
         self.robotDetector = self.pathDetector.robotDetector
 
     def createGraph(self):
@@ -36,6 +37,7 @@ class Planner:
         return D * sqrt(dx * dx + dy * dy)
 
     def getPaths(self):
+        print(39)
         self.pathDetector.recreateGraph()
         self.vertices = self.pathDetector.vertices
         self.matrix = self.pathDetector.matrix

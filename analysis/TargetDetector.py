@@ -25,7 +25,6 @@ class TargetDetector:
         self.camera = camera
         self.enableSettings()
         self.targets = self.createTargets()
-        #self.findTargets()
         self.mask = self.createMask()
 
 

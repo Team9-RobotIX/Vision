@@ -23,6 +23,8 @@ class Camera:
             self.getFrame()
             self.getFrame()
             self.getFrame()
+            self.getFrame()
+            self.getFrame()
 
 
     def getFrame(self,cropped=True):

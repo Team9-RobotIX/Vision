@@ -19,17 +19,17 @@ class PathDetector:
     length = 0
     width = 0
 
-    def __init__(self):
+    def __init__(self, robot, camera):
         print('Beginning Path Detection')
-        self.camera = analysis.Camera()
+        self.robot = robot
+        self.camera = camera
         self.wallDetector = analysis.WallDetector(self.camera)
         self.frame = self.camera.getFrame()
         self.walls = self.wallDetector.getWalls()
         self.targetDetector = analysis.TargetDetector(self.camera)
         self.targets = self.targetDetector.targets
         self.robotDetector = analysis.RobotDetector(self.camera)
-        self.length = self.robotDetector.length
-        self.width = self.robotDetector.width
+        (self.length, self.width) = self.robotDetector.getSize(self.robot)
         self.deadSpace = self.createDeadSpace()
         self.spacing = self.createSpacing()
         self.maxima = self.createMaxima()
@@ -56,7 +56,7 @@ class PathDetector:
         rects = []
         pointCounts = []
         points = []
-        robot = self.robotDetector.center(self.frame, newFrame=True)
+        robot = self.robotDetector.center(self.frame, self.robot, newFrame=True)
         targets = self.targetDetector.targets
         points.append(robot)
         pointCounts.append(1)

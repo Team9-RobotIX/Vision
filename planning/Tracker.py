@@ -2,13 +2,15 @@ import cv2
 import numpy as np
 import requests
 import math
+import json
 from time import sleep
 
 class Tracker:
-    def __init__(self, rd):
+    def __init__(self, rd, robot):
         self.robotDetector = rd
         self.plan = []
         self.instruction = None
+        self.robot = robot
 
     #Keep track of the robot
     #If centre of robot is more than (threshold) away from line, turn.
@@ -25,10 +27,7 @@ class Tracker:
             self.instruction = self.plan[0]
 
     def update(self,frame):
-        print('update')
-        #print("inst",self.instruction)
         if self.instruction == None:
-            print('none')
             self.stop()
         elif self.instruction['type'] == 'MOVE':
             #self.checkOrientation(frame)
@@ -36,9 +35,10 @@ class Tracker:
         elif self.instruction['type'] == 'TURN':
             target = self.instruction['angle']
             fix = self.checkOrientation(frame)
+            #TODO fix turning and delete this boi
             if fix:
                 sleep(0.5)
-                orientation = self.robotDetector.orientation(None, newFrame=True)
+                orientation = self.robotDetector.orientation(None, self.robot, newFrame=True)
                 diff = orientation - target
                 if diff > np.pi:
                     diff -= 2*np.pi
@@ -52,13 +52,11 @@ class Tracker:
 
 
     def checkPointDistance(self,frame):
-        center = np.array(self.robotDetector.center(frame))
-        orientation = self.robotDetector.orientation(frame)
+        center = np.array(self.robotDetector.center(frame,self.robot))
+        orientation = self.robotDetector.orientation(frame,self.robot)
         start = self.instruction['start']
         end = self.instruction['end']
         correctOrientation = np.arctan2(center[1]-end[1], end[0]-center[0])
-        print("ROBOT ORIENTATION:", orientation)
-        print("DESIRED ORIENTATION:", correctOrientation)
         correction = correctOrientation - orientation
         if correction > np.pi:
             correction -= 2 * np.pi
@@ -83,9 +81,8 @@ class Tracker:
 
 
     def checkOrientation(self,frame):
-        orientation = self.robotDetector.orientation(frame)
+        orientation = self.robotDetector.orientation(frame, self.robot)
         absolute = self.instruction['angle']
-        print('orientation:',orientation,' angle: ',absolute)
         dif = orientation - absolute
         turn = absolute - orientation
         if turn > np.pi:
@@ -106,30 +103,28 @@ class Tracker:
 
 
     def go(self,correction,dist):
-        print("correction",correction)
-        #dist = int(np.round(dist))
-        post = 'http://18.219.63.23/flaskapp/post?onOff=1&turnAngle=0.0&distance='+str(dist)+'&correction='+str(correction*2)
-        r = requests.get(post)
-        print("go",r.text)
+        post = 'http://18.219.63.23/development/robot/'+str(self.robot.id)+'/batch'
+        r = requests.post(post, data=json.dumps({
+            'angle':0.0,
+            'correction':correction,
+            'motor':True,
+            'distance':dist
+        }))
 
     def stop(self):
-        post = 'http://18.219.63.23/flaskapp/post?onOff=0&turnAngle=0.0&correction=0&distance=0'
-        r = requests.get(post)
-        #print("stop",r.text)
+        post = 'http://18.219.63.23/development/robot/'+str(self.robot.id)+'/batch'
+        r = requests.post(post, data=json.dumps({
+            'angle':0,
+            'correction':0,
+            'motor':False,
+            'distance':0
+        }))
 
-    def turn(self, d):
-        post = 'http://18.219.63.23/flaskapp/post?onOff=1&turnAngle='+str(d)+'&correction=0&distance=0'
-        r = requests.get(post)
-        #print("turn",r.text)
-
-    def checkDistance(self):
-        start = np.array(self.instruction.start)
-        end = np.array(self.instruction.end)
-        pos = np.array(self.robotDetector.center())
-
-        endAdj = end - start
-        posAdj = pos - start
-
-        projected = (np.dot(posAdj,endAdj) / np.dot(endAdj,endAdj)) * endAdj
-        distance = np.linalg.norm(projected, endAdj)
-        return distance
+    def turn(self, ang):
+        post = 'http://18.219.63.23/development/robot/'+str(self.robot.id)+'/batch'
+        r = requests.post(post, data=json.dumps({
+            'angle':ang,
+            'correction':0,
+            'motor':True,
+            'distance':0
+        }))

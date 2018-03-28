@@ -2,11 +2,11 @@ from planning import Planner as PL
 from planning import Tracker as TR
 from planning import Controller as CT
 
-def Planner():
-    return PL.Planner()
+def Planner(robot, cam):
+    return PL.Planner(robot, cam)
 
-def Tracker(rd):
-    return TR.Tracker(rd)
+def Tracker(rd, robot):
+    return TR.Tracker(rd, robot)
 
-def Controller():
-    return CT.Controller()
+def Controller(robots):
+    return CT.Controller(robots)
