@@ -6,16 +6,12 @@ import json
 from time import sleep
 
 class Tracker:
-    def __init__(self, rd, robot):
+    def __init__(self, rd, robot, disp):
         self.robotDetector = rd
         self.plan = []
         self.instruction = None
         self.robot = robot
-
-    #Keep track of the robot
-    #If centre of robot is more than (threshold) away from line, turn.
-    #Takes a current position
-    #Threshold in terms of pixels.
+        self.dispatch = disp
 
     def setPlan(self, plan):
         self.plan = plan
@@ -37,7 +33,7 @@ class Tracker:
             fix = self.checkOrientation(frame)
             #TODO fix turning and delete this boi
             if fix:
-                sleep(0.5)
+                '''sleep(0.5)
                 orientation = self.robotDetector.orientation(None, self.robot, newFrame=True)
                 diff = orientation - target
                 if diff > np.pi:
@@ -45,7 +41,7 @@ class Tracker:
                 else:
                     diff += 2*np.pi
                 self.turn(-diff)
-                sleep(0.25)
+                sleep(0.25)'''
                 self.stop()
         return len(self.plan) == 0
 
@@ -64,7 +60,7 @@ class Tracker:
             correction += 2 * np.pi
         point = np.array(self.instruction['end'])
         distance = np.linalg.norm(center - point)
-        if distance < 30:
+        if distance < 20:
             self.stop()
             del self.plan[0]
             if len(self.plan) > 0:
@@ -74,11 +70,6 @@ class Tracker:
         else:
             self.go(correction, distance)
             #self.go(correction)
-
-
-
-
-
 
     def checkOrientation(self,frame):
         orientation = self.robotDetector.orientation(frame, self.robot)
@@ -101,30 +92,41 @@ class Tracker:
             self.turn(turn)
             return False
 
-
     def go(self,correction,dist):
-        post = 'http://18.219.63.23/development/robot/'+str(self.robot.id)+'/batch'
-        r = requests.post(post, data=json.dumps({
+        #pass
+        #post = 'http://35.177.199.115/flaskapp/post?onOff=1&turnAngle=0&correction=0'
+        #r = requests.get(post)
+        #post = 'http://35.177.199.115/development/robot/'+str(self.robot.id)+'/batch'
+        #r = requests.post(post), data=json.dumps({
+        self.dispatch.add({
             'angle':0.0,
             'correction':correction,
             'motor':True,
-            'distance':dist
-        }))
+            'distance':dist,
+            'robot':self.robot.id
+        })
 
     def stop(self):
-        post = 'http://18.219.63.23/development/robot/'+str(self.robot.id)+'/batch'
-        r = requests.post(post, data=json.dumps({
-            'angle':0,
-            'correction':0,
+        #pass
+        #post = 'http://35.177.199.115/development/robot/'+str(self.robot.id)+'/batch'
+        #r = requests.post(post, data=json.dumps({
+        self.dispatch.add({
+            'angle':0.0,
+            'correction':0.0,
             'motor':False,
-            'distance':0
-        }))
+            'distance':0.0,
+            'robot':self.robot.id
+        })
 
     def turn(self, ang):
-        post = 'http://18.219.63.23/development/robot/'+str(self.robot.id)+'/batch'
-        r = requests.post(post, data=json.dumps({
-            'angle':ang,
-            'correction':0,
+        #pass
+        #post = 'http://35.177.199.115/development/robot/'+str(self.robot.id)+'/batch'
+        #r = requests.post(post, data=json.dumps(
+        #print(ang)
+        self.dispatch.add({
+            'angle':ang*.7,
+            'correction':0.0,
             'motor':True,
-            'distance':0
-        }))
+            'distance':0.0,
+            'robot':self.robot.id
+        })

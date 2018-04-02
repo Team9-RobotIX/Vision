@@ -37,6 +37,7 @@ class Camera:
 
     def setCrop(self,crop):
         self.crop = crop
+        self.size = (self.crop['h'],self.crop['w'])
 
     def isOpened(self):
         return self.videoFeed.isOpened()

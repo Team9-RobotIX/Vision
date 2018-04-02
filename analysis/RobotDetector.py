@@ -11,10 +11,6 @@ class RobotDetector:
         self.enableSettings()
         image = self.camera.getFrame()
         mask = cv2.inRange(image, robot.frontLower, robot.frontUpper)
-        cv2.imshow('m',mask)
-        cv2.imshow('i',image)
-        cv2.waitKey(1000)
-        cv2.destroyAllWindows()
         kernel = np.ones((5,5),np.uint8)
         mask = cv2.dilate(mask,kernel,iterations=3)
         img, blueContour, hier = cv2.findContours(mask,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
@@ -36,7 +32,6 @@ class RobotDetector:
         mask = cv2.inRange(image, robot.backLower,robot.backUpper)
         kernel = np.ones((5,5),np.uint8)
         mask = cv2.dilate(mask,kernel,iterations=3)
-
         M = cv2.moments(mask)
         if M['m00'] == 0:
             M['m00'] = 0.0000000001

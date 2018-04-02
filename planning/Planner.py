@@ -37,7 +37,6 @@ class Planner:
         return D * sqrt(dx * dx + dy * dy)
 
     def getPaths(self):
-        print(39)
         self.pathDetector.recreateGraph()
         self.vertices = self.pathDetector.vertices
         self.matrix = self.pathDetector.matrix
@@ -46,7 +45,6 @@ class Planner:
         self.nonTargets = len(self.vertices) - len(self.targets)
 
     def plan(self, targetName):
-        print(47, targetName)
         self.getPaths()
         startVert = self.vertices[0]
         start = (0,startVert[0],startVert[1])
