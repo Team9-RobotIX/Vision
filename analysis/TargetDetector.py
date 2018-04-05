@@ -52,10 +52,10 @@ class TargetDetector:
         targetObjects = []
         for target in targets:
             targetObjects.append(Target(target[0],np.array(target[1]),np.array(target[2])))
-        targetObjects[0].center = (123,241)
-        targetObjects[1].center = (454,113)
-        targetObjects[2].center = (448,330)
-        targetObjects[3].center = (100,100)
+        targetObjects[0].center = (120,300)
+        targetObjects[1].center = (420,100)
+        targetObjects[2].center = (420,300)
+        targetObjects[3].center = (120,100)
         return targetObjects
 
     def createMask(self):

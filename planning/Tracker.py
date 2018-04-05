@@ -49,7 +49,9 @@ class Tracker:
 
     def checkPointDistance(self,frame):
         center = np.array(self.robotDetector.center(frame,self.robot))
+        self.robot.center = center
         orientation = self.robotDetector.orientation(frame,self.robot)
+        self.robot.orientation = orientation
         start = self.instruction['start']
         end = self.instruction['end']
         correctOrientation = np.arctan2(center[1]-end[1], end[0]-center[0])
@@ -60,9 +62,10 @@ class Tracker:
             correction += 2 * np.pi
         point = np.array(self.instruction['end'])
         distance = np.linalg.norm(center - point)
-        if distance < 20:
+        if distance < 35:
             self.stop()
             del self.plan[0]
+            del self.robot.getPlan()[0]
             if len(self.plan) > 0:
                 self.instruction = self.plan[0]
             else:
@@ -73,6 +76,7 @@ class Tracker:
 
     def checkOrientation(self,frame):
         orientation = self.robotDetector.orientation(frame, self.robot)
+        self.robot.orientation = orientation
         absolute = self.instruction['angle']
         dif = orientation - absolute
         turn = absolute - orientation
@@ -80,7 +84,7 @@ class Tracker:
             turn -= 2 * np.pi
         elif turn < -np.pi:
             turn += 2 * np.pi
-        if np.absolute(orientation - absolute) < 25 / 180 * math.pi:
+        if np.absolute(orientation - absolute) < 7.5 / 180 * math.pi:
             self.stop()
             del self.plan[0]
             if len(self.plan) > 0:
@@ -100,7 +104,7 @@ class Tracker:
         #r = requests.post(post), data=json.dumps({
         self.dispatch.add({
             'angle':0.0,
-            'correction':correction,
+            'correction':1.5*correction,
             'motor':True,
             'distance':dist,
             'robot':self.robot.id
@@ -124,7 +128,7 @@ class Tracker:
         #r = requests.post(post, data=json.dumps(
         #print(ang)
         self.dispatch.add({
-            'angle':ang*.7,
+            'angle':ang*.4 ,
             'correction':0.0,
             'motor':True,
             'distance':0.0,

@@ -9,7 +9,7 @@ class Camera:
         for i in range(16):
             self.settings.append(0)
         self.crop = None
-        self.videoFeed = cv2.VideoCapture(0)
+        self.videoFeed = cv2.VideoCapture(-1)
 
     def enableSettings(self,settings):
         updated = False

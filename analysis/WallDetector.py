@@ -75,7 +75,8 @@ class WallDetector:
         #----------------------------------------------q
         #Picks walls by color
         print('    Applying Color Filter')
-        thresh = cv2.inRange(img,(50,70,150),(110,160,180))
+        print(img)
+        thresh = cv2.inRange(img,(50,60,140),(120,170,190))
         #Applies morphological transforms to smooth stuff out
         print('    Applying Morphological Transforms')
         dilated = cv2.dilate(thresh,np.ones((3,3)), iterations=3)
@@ -88,7 +89,7 @@ class WallDetector:
         trueContours = []
         for cnt in contours:
             area = cv2.contourArea(cnt)
-            if area > 500:
+            if area > 800:
                 trueContours.append(cnt)
         #overlays the contours
         print('    Filling Contours')

@@ -10,7 +10,7 @@ from time import sleep
 from math import sqrt
 
 base = 'http://18.219.63.23/edge'
-
+deliv = True
 post = 'http://18.219.63.23/post'
 
 class Controller:
@@ -19,7 +19,7 @@ class Controller:
         self.dispatch = planning.Dispatch()
         self.camera = analysis.Camera()
         self.robots = self.createRobots(robots, self.camera)
-        self.manager = planning.Manager(self.robots, self.camera)
+        self.manager = planning.Manager(self.robots, self.camera, self.dispatch)
         #self.plan = []
         #self.tracker = planning.Tracker(self.planner.robotDetector)
         self.robotDetector = analysis.RobotDetector(self.camera)
@@ -42,6 +42,7 @@ class Controller:
         f = 0
         try:
             while self.camera.isOpened():
+                frame = self.camera.getFrame()
                 f += 1
                 if time.time() - t > 1:
                     print(f)
@@ -52,12 +53,29 @@ class Controller:
                     if delivery != None:
                         freeBot = self.getFreeRobot()
                         freeBot.setDelivery(delivery)
-                self.deliver()
+                self.deliver(frame)
+                self.createBoxes(frame)
                 self.manager.manage()
+                cv2.imshow('Frame', self.drawInfo(frame))
+                cv2.waitKey(1)
         except KeyboardInterrupt:
             cv2.destroyAllWindows()
             self.camera.release()
             self.stop()
+
+    def createBoxes(self, frame):
+        centers = []
+        directions = []
+        boxes = []
+        for robo in self.robots:
+            center = self.robotDetector.center(frame, robo)
+            orientation = self.robotDetector.orientation(frame, robo)
+            robo.center = center
+            robo.orientation = orientation
+            centers.append(center)
+            directions.append(-orientation)
+        for i in range(len(self.robots)):
+            boxes.append(self.robots[i].getBox(centers[i],directions[i],save=True))
 
     def hasFreeRobot(self):
         for r in self.robots:
@@ -77,26 +95,26 @@ class Controller:
             r.stop()
         self.dispatch.dispatch()
 
-
-    def deliver(self):
-        frame = self.camera.getFrame()
-        #cv2.destroyAllWindows()
+    def deliver(self, frame):
         for r in self.robots:
             r.deliver(frame)
         self.dispatch.dispatch()
-        cv2.imshow('Frame', self.drawInfo(frame))
-        cv2.waitKey(1)
 
     def drawInfo(self,frame):
         targets = self.robots[0].planner.targets
         centers = []
         directions = []
         boxes = []
+        intersection = self.manager.intersection
+        if type(intersection) is np.ndarray:
+            col_inter = np.zeros(frame.shape, np.uint8)
+            col_inter[:,:,2] = intersection
+            frame = cv2.bitwise_or(frame, col_inter)
         for robo in self.robots:
-            centers.append(self.robotDetector.center(frame, robo))
-            directions.append(-self.robotDetector.orientation(frame, robo))
+            centers.append(robo.center)
+            directions.append(-robo.orientation)
         for i in range(len(self.robots)):
-            boxes.append(self.robots[i].getBox(centers[i],directions[i]))
+            boxes.append(self.robots[i].box)
         for robo in self.robots:
             plan = robo.getPlan()
             if plan == None:
@@ -118,20 +136,24 @@ class Controller:
         return frame
 
     def getDelivery(self):
+        global deliv
         url = "http://35.177.199.115/development/deliveries"
         r = requests.get(url)
         queue = json.loads(r.text)
         #if len(queue) == 0:
         #    return None
         #return queue[0]
-        #for d in queue:
-        #    if d['state'] == 'IN_QUEUE' or d['state'] == 'MOVING_TO_SOURCE':
-        #        return d
-        #return None
+        for d in queue:
+            if d['state'] == 'IN_QUEUE':# or d['state'] == 'MOVING_TO_SOURCE':
+                return d
+        return None
         #return
         #num = np.random.randint(low=0, high = 2)
         #if num == 0:
-        return {'id':0,'from':{'name':'office'},'to':{'name':'office'}}
+        #if deliv:
+        #    deliv = False
+        #    return {'id':0,'from':{'name':'office'},'to':{'name':'office'}}
+        #return None
         #else:
         #    return {'id':0,'from':{'name':'ER'},'to':{'name':'desk'}}
         #return {'id':0,'from':{'name':'reception'},'to':{'name':'office'}}

@@ -31,6 +31,9 @@ class PathDetector:
         self.robotDetector = analysis.RobotDetector(self.camera)
         (self.length, self.width) = self.robotDetector.getSize(self.robot)
         self.deadSpace = self.createDeadSpace()
+        cv2.imshow('ds',self.deadSpace)
+        cv2.waitKey(1000)
+        cv2.destroyAllWindows()
         self.spacing = self.createSpacing()
         self.maxima = self.createMaxima()
         (self.vertices, self.matrix) = self.createGraph() #probably not needed

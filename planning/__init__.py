@@ -16,5 +16,5 @@ def Controller(robots):
 def Dispatch():
     return D.Dispatch()
 
-def Manager(robots, camera):
-    return M.Manager(robots, camera)
+def Manager(robots, camera, disp):
+    return M.Manager(robots, camera, disp)

@@ -9,10 +9,17 @@ class Dispatch:
     def add(self, update):
         self.updates.append(update)
 
+    def overwrite(self, update):
+        for i in range(len(self.updates)):
+            if self.updates[i]['robot'] == update['robot']:
+                self.updates[i] = update
+
     def dispatch(self):
-        #print(self.updates)
+        print(self.updates)
         if len(self.updates) == 0:
             return
-        #print(self.updates[0])
-        r =requests.post('http://35.177.199.115/development/batch', data=json.dumps(self.updates))
+        try:
+            r =requests.post('http://35.177.199.115/development/batch', data=json.dumps(self.updates))
+        except Exception as e:
+            print('err sending') 
         self.updates = []
